@@ -1,7 +1,6 @@
 // Prénoms, noms et matricule des membres de l'équipe:
-// - Prénom1 NOM1 (matricule1)
-// - Prénom2 NOM2 (matricule2)
-#warning "Écrire les prénoms, noms et matricule des membres de l'équipe dans le fichier et commenter cette ligne"
+// - Paul MICHELON (1971832)
+//#warning "Écrire les prénoms, noms et matricule des membres de l'équipe dans le fichier et commenter cette ligne"
 
 #include <stdlib.h>
 #include <iostream>
@@ -136,7 +135,8 @@ public:
    void avancerPhysique()
    {
       const float dt = 0.5; // intervalle entre chaque affichage (en secondes)
-      position += dt * vitesse;
+      const float facVitesse = 0.1;
+      position += dt * vitesse * facVitesse;
       // test rapide pour empêcher que les poissons sortent de l'aquarium
       if ( abs(position.x) > 0.9*etat.bDim.x ) vitesse = -vitesse;
    }
@@ -212,9 +212,19 @@ public:
 
    void afficherQuad( GLfloat alpha ) // le plan qui ferme les solides
    {
-      glVertexAttrib4f( locColor, 1.0, 1.0, 1.0, alpha );
       // afficher le plan mis à l'échelle, tourné selon l'angle courant et à la position courante
       // partie 1: modifs ici ...
+      matrModel.PushMatrix();{
+         matrModel.Translate(0., 0., -etat.planDragage.w);
+         matrModel.Rotate(etat.angleDragage , 0., 1., 0.);
+         matrModel.Scale( etat.bDim.x, etat.bDim.y, etat.bDim.z );
+         glUniformMatrix4fv( locmatrModel, 1, GL_FALSE, matrModel );
+
+         glBindVertexArray( vao );
+         glVertexAttrib4f( locColor, 1.0, 1.0, 1.0, alpha );
+         glDrawElements(GL_TRIANGLES, 12*sizeof(GLfloat), GL_UNSIGNED_INT, NULL); // 48 = sizeof(coo)
+         glBindVertexArray( 0 );
+      }matrModel.PopMatrix(); glUniformMatrix4fv( locmatrModel, 1, GL_FALSE, matrModel );
 
    }
 
@@ -254,6 +264,9 @@ public:
    {
       // partie 1: modifs ici ...
       // afficher les poissons en plein et en fil de fer en tenant compte du plan de rayonsX,
+
+      glEnable( GL_CLIP_PLANE1 );
+      glEnable( GL_CLIP_PLANE0 );
       // puis tenir compte aussi du plan de dragage
 
       // activer les plans de coupe et afficher la scène normalement
@@ -261,12 +274,52 @@ public:
 
       // afficher les poissons en plein
       afficherTousLesPoissons();
+
       // afficher les poissons en fil de fer (squelette)
       // ...
+      glm::vec4 planRayonsX_inv = etat.planRayonsX;
+      planRayonsX_inv.x = -1.0 * etat.planRayonsX.x;
+      glUniform4fv( locplanRayonsX, 1, glm::value_ptr(planRayonsX_inv) );
+      glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+      afficherTousLesPoissons();
+      glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+
+      glDisable( GL_CLIP_PLANE0 );
+      glDisable( GL_CLIP_PLANE1 );
 
       // « fermer » les poissons
       // partie 1: modifs ici ...
       // ...
+        // glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        // //glDepthMask(GL_FALSE);
+        // glDisable( GL_DEPTH_TEST );
+        //
+        // // parties avant
+        // glEnable( GL_STENCIL_TEST );
+        // glStencilFunc( GL_ALWAYS, 0, 1 );
+        // glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
+        // glEnable( GL_CULL_FACE ); glCullFace( GL_BACK );
+        //
+        // afficherTousLesPoissons();
+        //
+        // // parties arrieres
+        // glStencilFunc( GL_ALWAYS, 1, 1 );
+        // glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
+        // glEnable( GL_CULL_FACE ); glCullFace( GL_FRONT );
+        //
+        // afficherTousLesPoissons();
+        //
+        // // le stencil contient les bonnes valeurs
+        // glStencilFunc( GL_EQUAL, 0, 1 );
+        // //glVertexAttrib3f( locColor, 1.0, 1.0, 1.0 );
+        //
+        // glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        // glDepthMask(GL_TRUE);
+        // glDisable( GL_CULL_FACE );
+        //
+        // afficherTousLesPoissons();
+        //
+        // glEnable( GL_DEPTH_TEST );
    }
 
    void calculerPhysique( )
@@ -391,6 +444,7 @@ void FenetreTP::initialiser()
 
    // activer le mélange de couleur pour la transparence
    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+   glEnable( GL_BLEND );
 
    // charger les nuanceurs
    chargerNuanceurs();
@@ -406,11 +460,24 @@ void FenetreTP::initialiser()
    // *** l'initialisation des objets graphiques doit être faite seulement après l'initialisation de la fenêtre graphique
 
    // partie 1: initialiser le VAO (pour le quad de l'aquarium)
-   // ...
+   glGenVertexArrays( 1, &vao );
+   glBindVertexArray(vao);
    // partie 1: créer les deux VBO pour les sommets et la connectivité
    // ...
-
+   glGenBuffers( 2, vbo );
+   // vertices
+   glBindBuffer( GL_ARRAY_BUFFER, vbo[0] );
+   glBufferData( GL_ARRAY_BUFFER, sizeof(coo), coo, GL_STATIC_DRAW );
+   glVertexAttribPointer( locVertex, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+   glEnableVertexAttribArray(locVertex);
+   // indices
+   glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo[1] );
+   glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof(connec), connec, GL_STATIC_DRAW );
    // ...
+   glBindVertexArray(0);
+
+   // delete [] coo;
+   // delete [] connec;
 
    // créer quelques autres formes
    cubeFil = new FormeCube( 2.0, false );

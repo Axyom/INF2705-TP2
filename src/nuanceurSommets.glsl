@@ -21,14 +21,18 @@ out Attribs {
 
 void main( void )
 {
-   // transformation standard du sommet
-   gl_Position = matrProj * matrVisu * matrModel * Vertex;
+    vec4 pos = matrModel * Vertex; // position dans le repere du monde
+    // transformation standard du sommet
+    gl_Position = matrProj * matrVisu * pos;
 
-   // couleur du sommet
-   AttribsOut.couleur = Color;
+    // couleur du sommet
+    AttribsOut.couleur = Color;
 
-   // Mettre un test bidon afin que l'optimisation du compilateur n'élimine l'attribut "planDragage".
-   // Mettre un test bidon afin que l'optimisation du compilateur n'élimine l'attribut "planRayonsX".
-   // Vous ENLEVEREZ ce test inutile!
-   if ( planDragage.x + planRayonsX.x < -10000.0 ) AttribsOut.couleur.r += 0.001;
+    // Mettre un test bidon afin que l'optimisation du compilateur n'élimine l'attribut "planDragage".
+    // Mettre un test bidon afin que l'optimisation du compilateur n'élimine l'attribut "planRayonsX".
+    // Vous ENLEVEREZ ce test inutile!
+    //if ( planDragage.x + planRayonsX.x < -10000.0 ) AttribsOut.couleur.r += 0.001;
+
+    gl_ClipDistance[0] = dot( planRayonsX, pos );
+    gl_ClipDistance[1] = dot( planDragage, pos );
 }
