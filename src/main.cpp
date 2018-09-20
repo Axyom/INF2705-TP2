@@ -135,7 +135,7 @@ public:
    void avancerPhysique()
    {
       const float dt = 0.5; // intervalle entre chaque affichage (en secondes)
-      const float facVitesse = 0.1;
+      const float facVitesse = 0.03;
       position += dt * vitesse * facVitesse;
       // test rapide pour empêcher que les poissons sortent de l'aquarium
       if ( abs(position.x) > 0.9*etat.bDim.x ) vitesse = -vitesse;
@@ -215,8 +215,8 @@ public:
       // afficher le plan mis à l'échelle, tourné selon l'angle courant et à la position courante
       // partie 1: modifs ici ...
       matrModel.PushMatrix();{
-         matrModel.Translate(0., 0., -etat.planDragage.w);
          matrModel.Rotate(etat.angleDragage , 0., 1., 0.);
+         matrModel.Translate(0., 0., -etat.planDragage.w);
          matrModel.Scale( etat.bDim.x, etat.bDim.y, etat.bDim.z );
          glUniformMatrix4fv( locmatrModel, 1, GL_FALSE, matrModel );
 
@@ -277,49 +277,50 @@ public:
 
       // afficher les poissons en fil de fer (squelette)
       // ...
-      glm::vec4 planRayonsX_inv = etat.planRayonsX;
-      planRayonsX_inv.x = -1.0 * etat.planRayonsX.x;
+      glm::vec4 planRayonsX_inv = -etat.planRayonsX;
       glUniform4fv( locplanRayonsX, 1, glm::value_ptr(planRayonsX_inv) );
       glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
       afficherTousLesPoissons();
       glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 
       glDisable( GL_CLIP_PLANE0 );
-      glDisable( GL_CLIP_PLANE1 );
 
       // « fermer » les poissons
       // partie 1: modifs ici ...
       // ...
-        // glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        // //glDepthMask(GL_FALSE);
-        // glDisable( GL_DEPTH_TEST );
-        //
-        // // parties avant
-        // glEnable( GL_STENCIL_TEST );
-        // glStencilFunc( GL_ALWAYS, 0, 1 );
-        // glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
-        // glEnable( GL_CULL_FACE ); glCullFace( GL_BACK );
-        //
-        // afficherTousLesPoissons();
-        //
-        // // parties arrieres
-        // glStencilFunc( GL_ALWAYS, 1, 1 );
-        // glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
-        // glEnable( GL_CULL_FACE ); glCullFace( GL_FRONT );
-        //
-        // afficherTousLesPoissons();
-        //
-        // // le stencil contient les bonnes valeurs
-        // glStencilFunc( GL_EQUAL, 0, 1 );
-        // //glVertexAttrib3f( locColor, 1.0, 1.0, 1.0 );
-        //
-        // glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        // glDepthMask(GL_TRUE);
-        // glDisable( GL_CULL_FACE );
-        //
-        // afficherTousLesPoissons();
-        //
-        // glEnable( GL_DEPTH_TEST );
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glEnable( GL_STENCIL_TEST );
+        glEnable( GL_CULL_FACE );
+        glDisable( GL_DEPTH_TEST );
+
+        // on passe toujours le test du stencil au debut pour l'increment ou le decrementer
+        glStencilFunc( GL_ALWAYS, 0, 1 );
+
+        // parties arrieres
+        glCullFace( GL_FRONT );
+        glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
+        afficherTousLesPoissons();
+
+        // parties avant
+        glCullFace( GL_BACK );
+        glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
+        afficherTousLesPoissons();
+
+        // Si on a vu qu'une partie arriere, on a 1 dans le stencil
+        glStencilFunc( GL_NOTEQUAL, 0, 0xff );
+
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glEnable( GL_DEPTH_TEST );
+
+        afficherQuad(1.0);
+
+        // revenons a l'etat precedent
+        glEnable( GL_DEPTH_TEST );
+        glDisable( GL_CULL_FACE );
+        glDisable( GL_STENCIL_TEST );
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        glDisable( GL_CLIP_PLANE1 );
    }
 
    void calculerPhysique( )
