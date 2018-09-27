@@ -375,6 +375,7 @@ void chargerNuanceurs()
          glAttachShader( progBase, nuanceurObj );
          ProgNuanceur::afficherLogCompile( nuanceurObj );
       }
+
       // attacher le nuanceur de fragments
       {
          GLuint nuanceurObj = glCreateShader( GL_FRAGMENT_SHADER );
@@ -413,7 +414,7 @@ void chargerNuanceurs()
          ProgNuanceur::afficherLogCompile( nuanceurObj );
          delete [] chainesSommets;
       }
-#if 0
+
       // partie 2: enlever le "#if 0" pour utiliser le nuanceur de géométrie
       const GLchar *chainesGeometrie = ProgNuanceur::lireNuanceur( "nuanceurGeometrie.glsl" );
       if ( chainesGeometrie != NULL )
@@ -425,7 +426,7 @@ void chargerNuanceurs()
          ProgNuanceur::afficherLogCompile( nuanceurObj );
          delete [] chainesGeometrie;
       }
-#endif
+
       // attacher le nuanceur de fragments
       const GLchar *chainesFragments = ProgNuanceur::lireNuanceur( "nuanceurFragments.glsl" );
       if ( chainesFragments != NULL )
@@ -562,7 +563,8 @@ void FenetreTP::afficherScene( )
       glFinish();
 
       // obtenir la clôture et calculer la position demandée
-      GLint cloture[4]; glGetIntegerv( GL_VIEWPORT, cloture );
+      GLint cloture[4];
+      glGetIntegerv( GL_VIEWPORT, cloture );
       GLint posX = etat.sourisPosPrec.x, posY = cloture[3]-etat.sourisPosPrec.y;
 
       // dire de lire le tampon arrière où l'on vient tout juste de dessiner
@@ -571,6 +573,7 @@ void FenetreTP::afficherScene( )
       // obtenir la couleur
       GLubyte couleur[3];
       glReadPixels( posX, posY, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, couleur );
+      std::cout << posX << "  " << posY << std::endl;
       std::cout << "couleur = " << (int) couleur[0] << " " << (int) couleur[1] << " " << (int) couleur[2] << std::endl;
 
       // obtenir la profondeur (accessoirement)
@@ -580,8 +583,6 @@ void FenetreTP::afficherScene( )
 
       // la couleur lue indique l'objet sélectionné
       std::vector<Poisson*>::iterator it;
-
-      std::cout << pressed << std::endl;
 
       for ( auto it = aquarium.poissons.begin() ; it != aquarium.poissons.end() ; it++ )
       {
@@ -614,7 +615,18 @@ void FenetreTP::afficherScene( )
 
 void FenetreTP::redimensionner( GLsizei w, GLsizei h )
 {
-   glViewport( 0, 0, w, h );
+    GLfloat h2 = 0.5*h;
+    glScissor( 0, 0, w, h );
+    // GLfloat v[]  = {
+    //    0, 0,  w, h2,
+    //    0, h2, w, h2,
+    // };
+    // glViewportArrayv( 0, 2, v );
+    // glViewportIndexedf( 0,  1,  1,  w, h2 );
+    // glScissorIndexed( 0,  1,  1,  w, h2 );
+    glViewport( 0, h2, w, h2 ); // pour le viewport 0
+    glViewportIndexedf( 1,  0, 0, w, h2 ); // pour le viewport 1
+    glScissorIndexed(   1,  0, 0, w, h2 );
 }
 
 void FenetreTP::clavier( TP_touche touche )
