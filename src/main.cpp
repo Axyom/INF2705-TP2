@@ -12,6 +12,11 @@
 #include <vector>
 #include <iterator>
 
+#define COLOR_OFFSET 26
+
+// indique si on est en train de faire un clic de souris
+static bool pressed = false;
+
 // variables pour l'utilisation des nuanceurs
 GLuint prog;      // votre programme de nuanceurs
 GLint locVertex = -1;
@@ -54,7 +59,8 @@ struct Etat
    glm::vec4 planRayonsX; // équation du plan de rayonX (partie 1)
    glm::vec4 planDragage; // équation du plan de dragage (partie 1)
    GLfloat angleDragage;  // angle (degrés) du plan de dragage autour de y (partie 1)
-} etat = { false, true, true, false, glm::vec4( 16.0, 10.0, 8.0, 1.0 ), glm::ivec2(0), glm::vec4( 1, 0, 0, 4.0 ), glm::vec4( 0, 0, 1, 7.9 ), 0.0 };
+   bool afficherCouleurSelection; // afficher les couleurs du mode sélection?
+} etat = { false, true, true, false, glm::vec4( 16.0, 10.0, 8.0, 1.0 ), glm::ivec2(0), glm::vec4( 1, 0, 0, 4.0 ), glm::vec4( 0, 0, 1, 7.9 ), 0.0, false };
 
 //
 // variables pour définir le point de vue
@@ -87,8 +93,8 @@ public:
 class Poisson
 {
 public:
-   Poisson( glm::vec3 pos = glm::vec3(3.0,1.0,0.0), glm::vec3 vit = glm::vec3(1.0,0.0,0.0), float tai = 0.5 )
-      : position(pos), vitesse(vit), taille(tai)
+   Poisson( glm::vec3 pos = glm::vec3(3.0,1.0,0.0), glm::vec3 vit = glm::vec3(1.0,0.0,0.0), float tai = 0.5, int i = 0 )
+      : position(pos), vitesse(vit), taille(tai), id(i), estSelectionne(false)
    {}
 
    void afficher()
@@ -100,10 +106,21 @@ public:
 
          // partie 2: modifs ici ...
          // donner la couleur de sélection
+         glm::vec3 coulCorps( 0.0, 1.0, 0.0 ); // vert
+         glm::vec3 coulYeux( 1.0, 1.0, 0.0 ); // jaune
+
+         if (etat.modeSelection)
+         {
+             coulCorps.r = float(this->id)/255.0;
+             coulCorps.g = 0.0;
+             coulCorps.b = 0.0;
+             coulYeux.r = float(this->id)/255.0;
+             coulYeux.g = 0.0;
+             coulYeux.b = 0.0;
+         }
 
          // afficher le corps
          // (en utilisant le cylindre centré dans l'axe des Z, de rayon 1, entre (0,0,0) et (0,0,1))
-         glm::vec3 coulCorps( 0.0, 1.0, 0.0 ); // vert
          glVertexAttrib3fv( locColor, glm::value_ptr(coulCorps) );
          matrModel.PushMatrix();{
             matrModel.Scale( 5.0*taille, taille, taille );
@@ -117,7 +134,6 @@ public:
 
          // afficher les yeux
          // (en utilisant le cylindre centré dans l'axe des Z, de rayon 1, entre (0,0,0) et (0,0,1))
-         glm::vec3 coulYeux( 1.0, 1.0, 0.0 ); // jaune
          glVertexAttrib3fv( locColor, glm::value_ptr(coulYeux) );
          matrModel.PushMatrix();{
             matrModel.Rotate( 90.0, 1.0, 0.0, 0.0 );
@@ -136,6 +152,7 @@ public:
    {
       const float dt = 0.5; // intervalle entre chaque affichage (en secondes)
       const float facVitesse = 0.03;
+      # warning "changer vitesse"
       position += dt * vitesse * facVitesse;
       // test rapide pour empêcher que les poissons sortent de l'aquarium
       if ( abs(position.x) > 0.9*etat.bDim.x ) vitesse = -vitesse;
@@ -145,6 +162,8 @@ public:
    glm::vec3 position;   // en unités
    glm::vec3 vitesse;    // en unités/seconde
    float taille;         // en unités
+   int id;
+   bool estSelectionne;
 };
 
 //
@@ -200,10 +219,9 @@ public:
          float taille = glm::mix( 0.5 , 0.9, rand()/((double)RAND_MAX) );
 
          // créer un nouveau poisson
-         Poisson *p = new Poisson( pos[i], vit, taille );
-
          // assigner une couleur de sélection
          // partie 2: modifs ici ...
+         Poisson *p = new Poisson( pos[i], vit, taille, i+COLOR_OFFSET );
 
          // ajouter ce poisson dans la liste
          poissons.push_back( p );
@@ -312,6 +330,8 @@ public:
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glEnable( GL_DEPTH_TEST );
 
+        glDisable( GL_CLIP_PLANE1 );
+
         afficherQuad(1.0);
 
         // revenons a l'etat precedent
@@ -319,8 +339,6 @@ public:
         glDisable( GL_CULL_FACE );
         glDisable( GL_STENCIL_TEST );
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-        glDisable( GL_CLIP_PLANE1 );
    }
 
    void calculerPhysique( )
@@ -330,7 +348,8 @@ public:
          std::vector<Poisson*>::iterator it;
          for ( it = poissons.begin() ; it != poissons.end() ; it++ )
          {
-            (*it)->avancerPhysique();
+             if (!(*it)->estSelectionne)
+                (*it)->avancerPhysique();
          }
       }
    }
@@ -527,17 +546,69 @@ void FenetreTP::afficherScene( )
    // afficher le contenu de l'aquarium
    aquarium.afficherContenu();
 
-   // en plus, dessiner le plan de dragage en transparence pour bien voir son étendue
-   aquarium.afficherQuad( 0.25 );
-
-   // revenir au programme de base pour tracer l'aquarium
-   glUseProgram( progBase );
-
-   // tracer les parois de l'aquarium
-   aquarium.afficherParois( );
-
    // sélectionner ?
    // partie 2: modifs ici ...
+   // sélectionner ?
+   static bool hasClicked = false;
+
+   if (pressed == false)
+   {
+       hasClicked = false;
+   }
+
+   if ( etat.modeSelection )
+   {
+      // s'assurer que toutes les opérations sont terminées
+      glFinish();
+
+      // obtenir la clôture et calculer la position demandée
+      GLint cloture[4]; glGetIntegerv( GL_VIEWPORT, cloture );
+      GLint posX = etat.sourisPosPrec.x, posY = cloture[3]-etat.sourisPosPrec.y;
+
+      // dire de lire le tampon arrière où l'on vient tout juste de dessiner
+      glReadBuffer( GL_BACK );
+
+      // obtenir la couleur
+      GLubyte couleur[3];
+      glReadPixels( posX, posY, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, couleur );
+      std::cout << "couleur = " << (int) couleur[0] << " " << (int) couleur[1] << " " << (int) couleur[2] << std::endl;
+
+      // obtenir la profondeur (accessoirement)
+      GLfloat profondeur;
+      glReadPixels( posX, posY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &profondeur );
+      std::cout << "profondeur = " << profondeur << std::endl;
+
+      // la couleur lue indique l'objet sélectionné
+      std::vector<Poisson*>::iterator it;
+
+      std::cout << pressed << std::endl;
+
+      for ( auto it = aquarium.poissons.begin() ; it != aquarium.poissons.end() ; it++ )
+      {
+          if ((*it)->id == couleur[0])
+          {
+              if (!hasClicked)
+              {
+                  (*it)->estSelectionne = ! (*it)->estSelectionne;
+                  hasClicked = true;
+              }
+
+              std::cout << "Poisson n° " << int(couleur[0] - COLOR_OFFSET) << std::endl;
+              # warning "Enlever poisson n°"
+          }
+      }
+   }
+   else
+   {
+       // en plus, dessiner le plan de dragage en transparence pour bien voir son étendue
+       aquarium.afficherQuad( 0.25 );
+
+       // revenir au programme de base pour tracer l'aquarium
+       glUseProgram( progBase );
+
+       // tracer les parois de l'aquarium
+       aquarium.afficherParois( );
+   }
 
 }
 
@@ -611,6 +682,11 @@ void FenetreTP::clavier( TP_touche touche )
       std::cout << " etat.attEloignement=" << etat.attEloignement << std::endl;
       break;
 
+  case TP_s: // Afficher les couleurs de sélection
+     etat.afficherCouleurSelection = !etat.afficherCouleurSelection;
+     std::cout << " etat.afficherCouleurSelection=" << etat.afficherCouleurSelection << std::endl;
+     break;
+
    default:
       std::cout << " touche inconnue : " << (char) touche << std::endl;
       imprimerTouches();
@@ -618,7 +694,6 @@ void FenetreTP::clavier( TP_touche touche )
    }
 }
 
-static bool pressed = false;
 void FenetreTP::sourisClic( int button, int state, int x, int y )
 {
    pressed = ( state == TP_PRESSE );
@@ -685,7 +760,17 @@ int main( int argc, char *argv[] )
 
       // affichage
       fenetre.afficherScene();
-      fenetre.swap();
+
+      // affichage
+      fenetre.afficherScene();
+      if ( etat.modeSelection && !etat.afficherCouleurSelection ) // pour le débogage de la sélection
+      {
+         // la sélection a été faite
+         etat.modeSelection = pressed = false;
+         // (pas d'appel à swap(): il n'est pas pertinent de montrer ce qu'on vient de tracer pour la sélection)
+      }
+      else
+         fenetre.swap();
 
       // récupérer les événements et appeler la fonction de rappel
       boucler = fenetre.gererEvenement();
