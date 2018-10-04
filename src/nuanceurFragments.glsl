@@ -1,6 +1,11 @@
 #version 410
 
 uniform int attEloignement;
+uniform int modeSelection;
+
+uniform mat4 matrModel;
+uniform mat4 matrVisu;
+uniform mat4 matrProj;
 const float debAttenuation = 30.0;
 const float finAttenuation = 50.0;
 
@@ -16,7 +21,7 @@ void main( void )
    FragColor = AttribsIn.couleur;
 
    // atténuer selon la profondeur
-   if ( attEloignement == 1 )
+   if ( attEloignement == 1 && modeSelection == 0 )
    {
 
       // Obtenir la distance à la caméra du sommet dans le repère de la caméra

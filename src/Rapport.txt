@@ -17,3 +17,11 @@ Q2: Pourquoi ne peut-on pas utiliser le même programme de nuanceurs que pour
     de ne pas modifier les couleurs, mais le programme de nuanceurs des
     poissons ne fonctionnera pas correctement pour afficher l'aquarium et
     ses côtés. Pourquoi?
+
+    Contrairement au pipeline utilisé pour l'aquarium, le pipeline des poissons comprend un nuanceur
+    de géométrie. Le problème survient lorsqu'on veut tracer les lignes blanches symbolisant les
+    bords de l'aquarium. Dans le nuanceur de géométrie, on prend en entrée des triangles et nous
+    produisons en sortie un triangle strip. Ces primitives seraient incompatibles avec les lignes du
+    bord de l'aquarium.
+    Cela est impossible à corriger avec des uniform, car cela relève de la structure du pipeline, d'où
+    l'intêret d'utiliser deux programmes de shaders.

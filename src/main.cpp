@@ -305,15 +305,13 @@ public:
 
       glDisable( GL_CLIP_PLANE0 );
 
-      //glUniform4fv( locplanRayonsX, 1, glm::value_ptr(etat.planRayonsX) );
-
       // « fermer » les poissons
       // partie 1: modifs ici ...
       // ...
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glEnable( GL_STENCIL_TEST );
-        glEnable( GL_CULL_FACE );
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDisable( GL_DEPTH_TEST );
+        glEnable( GL_CULL_FACE );
 
         // on passe toujours le test du stencil au debut pour l'increment ou le decrementer
         glStencilFunc( GL_ALWAYS, 0, 1 );
@@ -328,21 +326,19 @@ public:
         glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
         afficherTousLesPoissons();
 
-        // Si on a vu qu'une partie arriere, on a 1 dans le stencil
-        glStencilFunc( GL_NOTEQUAL, 0, 0xff );
-
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glEnable( GL_DEPTH_TEST );
+        glDisable( GL_CULL_FACE );
+
+        // Si on a vu qu'une partie arriere, on a 1 dans le stencil
+        glStencilFunc( GL_NOTEQUAL, 0, 0xff );
 
         glDisable( GL_CLIP_PLANE1 );
 
         afficherQuad(1.0);
 
         // revenons a l'etat precedent
-        glEnable( GL_DEPTH_TEST );
-        glDisable( GL_CULL_FACE );
         glDisable( GL_STENCIL_TEST );
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
    }
 
    void calculerPhysique( )
