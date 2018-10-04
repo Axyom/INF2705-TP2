@@ -1,5 +1,6 @@
 #version 410
 
+uniform int modeSelection;
 const float M_PI = 3.14159265358979323846;	// pi
 const float M_PI_2 = 1.57079632679489661923;	// pi/2
 
@@ -18,12 +19,13 @@ void main( void )
 
     vec4 cyan = vec4(0., 1., 1., 1.);
     float colorFact = Vertex.z;
-    // couleur du sommet
-    // AttribsOut.couleur.r = Color.r;
-    // AttribsOut.couleur.g = mix(Color.g, cyan.g, colorFact);
-    // AttribsOut.couleur.b = mix(Color.b, cyan.b, colorFact);
 
-    AttribsOut.couleur = mix(Color, cyan, colorFact);
-
-    // AttribsOut.couleur = Color;
+    if (modeSelection == 1)
+    {
+        AttribsOut.couleur = Color;
+    }
+    else
+    {
+        AttribsOut.couleur = mix(Color, cyan, colorFact);
+    }
 }

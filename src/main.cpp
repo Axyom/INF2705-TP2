@@ -27,12 +27,14 @@ GLint locmatrProj = -1;
 GLint locplanDragage = -1;
 GLint locplanRayonsX = -1;
 GLint locattEloignement = -1;
+GLint locmodeSelection = -1;
 GLuint progBase;  // le programme de nuanceurs de base
 GLint locVertexBase = -1;
 GLint locColorBase = -1;
 GLint locmatrModelBase = -1;
 GLint locmatrVisuBase = -1;
 GLint locmatrProjBase = -1;
+
 
 // matrices du pipeline graphique
 MatricePipeline matrModel, matrVisu, matrProj;
@@ -454,6 +456,8 @@ void chargerNuanceurs()
       if ( ( locplanDragage = glGetUniformLocation( prog, "planDragage" ) ) == -1 ) std::cerr << "!!! pas trouvé la \"Location\" de planDragage" << std::endl;
       if ( ( locplanRayonsX = glGetUniformLocation( prog, "planRayonsX" ) ) == -1 ) std::cerr << "!!! pas trouvé la \"Location\" de planRayonsX" << std::endl;
       if ( ( locattEloignement = glGetUniformLocation( prog, "attEloignement" ) ) == -1 ) std::cerr << "!!! pas trouvé la \"Location\" de attEloignement" << std::endl;
+      if ( ( locmodeSelection = glGetUniformLocation( prog, "modeSelection" ) ) == -1 ) std::cerr << "!!! pas trouvé la \"Location\" de modeSelection" << std::endl;
+
    }
 }
 
@@ -525,7 +529,7 @@ void FenetreTP::afficherScene( )
    glUseProgram( progBase );
 
    // définir le pipeline graphique
-   matrProj.Perspective( 50.0, (GLdouble) largeur_ / (GLdouble) hauteur_, 0.1, 100.0 );
+   matrProj.Perspective( 30.0, (GLdouble) largeur_ / ((GLdouble) hauteur_ * 0.5), 0.1, 100.0 );
    glUniformMatrix4fv( locmatrProjBase, 1, GL_FALSE, matrProj );
 
    camera.definir();
@@ -545,6 +549,7 @@ void FenetreTP::afficherScene( )
    glUniform4fv( locplanDragage, 1, glm::value_ptr(etat.planDragage) );
    glUniform4fv( locplanRayonsX, 1, glm::value_ptr(etat.planRayonsX) );
    glUniform1i( locattEloignement, etat.attEloignement );
+   glUniform1i( locmodeSelection, etat.modeSelection );
 
    // afficher le contenu de l'aquarium
    aquarium.afficherContenu();
@@ -569,35 +574,39 @@ void FenetreTP::afficherScene( )
       glGetIntegerv( GL_VIEWPORT, cloture );
       GLint posX = etat.sourisPosPrec.x, posY = cloture[1] + cloture[3]-etat.sourisPosPrec.y;
 
-      // dire de lire le tampon arrière où l'on vient tout juste de dessiner
-      glReadBuffer( GL_BACK );
+      for (int i =0; i<4; i++)
+        std::cout << cloture[i] << " cloture " << std::endl;
 
-      // obtenir la couleur
-      GLubyte couleur[3];
-      glReadPixels( posX, posY, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, couleur );
-      std::cout << posX << "  " << posY << std::endl;
-      std::cout << "couleur = " << (int) couleur[0] << " " << (int) couleur[1] << " " << (int) couleur[2] << std::endl;
-
-      // obtenir la profondeur (accessoirement)
-      GLfloat profondeur;
-      glReadPixels( posX, posY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &profondeur );
-      std::cout << "profondeur = " << profondeur << std::endl;
-
-      // la couleur lue indique l'objet sélectionné
-      std::vector<Poisson*>::iterator it;
-
-      for ( auto it = aquarium.poissons.begin() ; it != aquarium.poissons.end() ; it++ )
+      if (posY >= cloture[3]) // pour que la selection ne fonctionne que sur l'ecran du haut
       {
-          if ((*it)->id == couleur[0])
-          {
-              if (!hasClicked)
-              {
-                  (*it)->estSelectionne = ! (*it)->estSelectionne;
-                  hasClicked = true;
-              }
+          // dire de lire le tampon arrière où l'on vient tout juste de dessiner
+          glReadBuffer( GL_BACK );
 
-              std::cout << "Poisson n° " << int(couleur[0] - COLOR_OFFSET) << std::endl;
-              # warning "Enlever poisson n°"
+          // obtenir la couleur
+          GLubyte couleur[3];
+          glReadPixels( posX, posY, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, couleur );
+          std::cout << posX << "  " << posY << std::endl;
+
+          // obtenir la profondeur (accessoirement)
+          GLfloat profondeur;
+          glReadPixels( posX, posY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &profondeur );
+
+          // la couleur lue indique l'objet sélectionné
+          std::vector<Poisson*>::iterator it;
+
+          for ( auto it = aquarium.poissons.begin() ; it != aquarium.poissons.end() ; it++ )
+          {
+              if ((*it)->id == couleur[0])
+              {
+                  if (!hasClicked)
+                  {
+                      (*it)->estSelectionne = ! (*it)->estSelectionne;
+                      hasClicked = true;
+                  }
+
+                  std::cout << "Poisson n° " << int(couleur[0] - COLOR_OFFSET) << std::endl;
+                  # warning "Enlever poisson n°"
+              }
           }
       }
    }

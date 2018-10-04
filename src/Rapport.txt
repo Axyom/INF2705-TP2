@@ -5,6 +5,10 @@ Q1: Dans le nuanceur de sommets, si on souhaite calculer la profondeur du
 
     Pourquoi doit-on inverser le signe du résultat calculé ?
 
+    L'axe z pointe vers la caméra. Quand on représente les coordonnées des objets à l'écran dans
+    le repère, leur profondeur (z) est donc négative. On effectue donc une négation pour retrouver
+    une valeur positive.
+
 
 Q2: Pourquoi ne peut-on pas utiliser le même programme de nuanceurs que pour
     les poissons pour voir l'aquarium (et surtout ses côtés!) dans les deux
@@ -13,4 +17,3 @@ Q2: Pourquoi ne peut-on pas utiliser le même programme de nuanceurs que pour
     de ne pas modifier les couleurs, mais le programme de nuanceurs des
     poissons ne fonctionnera pas correctement pour afficher l'aquarium et
     ses côtés. Pourquoi?
-
