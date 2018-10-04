@@ -303,6 +303,8 @@ public:
 
       glDisable( GL_CLIP_PLANE0 );
 
+      //glUniform4fv( locplanRayonsX, 1, glm::value_ptr(etat.planRayonsX) );
+
       // « fermer » les poissons
       // partie 1: modifs ici ...
       // ...
@@ -565,7 +567,7 @@ void FenetreTP::afficherScene( )
       // obtenir la clôture et calculer la position demandée
       GLint cloture[4];
       glGetIntegerv( GL_VIEWPORT, cloture );
-      GLint posX = etat.sourisPosPrec.x, posY = cloture[3]-etat.sourisPosPrec.y;
+      GLint posX = etat.sourisPosPrec.x, posY = cloture[1] + cloture[3]-etat.sourisPosPrec.y;
 
       // dire de lire le tampon arrière où l'on vient tout juste de dessiner
       glReadBuffer( GL_BACK );

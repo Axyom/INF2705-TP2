@@ -15,6 +15,15 @@ out Attribs {
 void main( void )
 {
     gl_Position = Vertex;
+
+    vec4 cyan = vec4(0., 1., 1., 1.);
+    float colorFact = Vertex.z;
     // couleur du sommet
-    AttribsOut.couleur = Color;
+    // AttribsOut.couleur.r = Color.r;
+    // AttribsOut.couleur.g = mix(Color.g, cyan.g, colorFact);
+    // AttribsOut.couleur.b = mix(Color.b, cyan.b, colorFact);
+
+    AttribsOut.couleur = mix(Color, cyan, colorFact);
+
+    // AttribsOut.couleur = Color;
 }
