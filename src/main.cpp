@@ -237,7 +237,8 @@ public:
       matrModel.PushMatrix();{
          matrModel.Rotate(etat.angleDragage , 0., 1., 0.);
          matrModel.Translate(0., 0., -etat.planDragage.w);
-         matrModel.Scale( etat.bDim.x, etat.bDim.y, etat.bDim.z );
+         matrModel.Scale( etat.bDim.x, etat.bDim.y, etat.bDim.z/cos(etat.angleDragage) );
+         # warning "regler la taille du plan dragage"
          glUniformMatrix4fv( locmatrModel, 1, GL_FALSE, matrModel );
 
          glBindVertexArray( vao );
