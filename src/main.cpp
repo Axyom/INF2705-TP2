@@ -1,6 +1,6 @@
 // Prénoms, noms et matricule des membres de l'équipe:
 // - Paul MICHELON (1971832)
-//#warning "Écrire les prénoms, noms et matricule des membres de l'équipe dans le fichier et commenter cette ligne"
+// - Laora Heintz (1974521)
 
 #include <stdlib.h>
 #include <iostream>
@@ -153,8 +153,7 @@ public:
    void avancerPhysique()
    {
       const float dt = 0.5; // intervalle entre chaque affichage (en secondes)
-      const float facVitesse = 0.03;
-      # warning "changer vitesse"
+      const float facVitesse = 1.0;
       position += dt * vitesse * facVitesse;
       // test rapide pour empêcher que les poissons sortent de l'aquarium
       if ( abs(position.x) > 0.9*etat.bDim.x ) vitesse = -vitesse;
@@ -237,8 +236,9 @@ public:
       matrModel.PushMatrix();{
          matrModel.Rotate(etat.angleDragage , 0., 1., 0.);
          matrModel.Translate(0., 0., -etat.planDragage.w);
-         matrModel.Scale( etat.bDim.x, etat.bDim.y, etat.bDim.z/cos(etat.angleDragage) );
-         # warning "regler la taille du plan dragage"
+         // la dalle ne change pas de taille dans les images d'exemple du sujet de lab, et le programme
+         // d'exemple (en seance de lab) ne possedait pas cette propriete
+         matrModel.Scale( etat.bDim.x, etat.bDim.y, etat.bDim.z );
          glUniformMatrix4fv( locmatrModel, 1, GL_FALSE, matrModel );
 
          glBindVertexArray( vao );
@@ -600,9 +600,6 @@ void FenetreTP::afficherScene( )
                       (*it)->estSelectionne = ! (*it)->estSelectionne;
                       hasClicked = true;
                   }
-
-                  std::cout << "Poisson n° " << int(couleur[0] - COLOR_OFFSET) << std::endl;
-                  # warning "Enlever poisson n°"
               }
           }
       }
